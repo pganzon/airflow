@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e
+
+function airflowup(){
+  local role=$1
+
+  sudo mkdir -p ${AIRFLOW_HOME}/log && sudo chown -R airflow:airflow ${AIRFLOW_HOME}
+  sudo ln -sf ${AIRFLOW_CFG} ${AIRFLOW_HOME}/airflow.cfg
+
+  # initialize the database
+  test "${INITDB:-Y}" == "Y" && airflow initdb
+
+  if [ "${role}" =  "master" ]
+  then
+    airflow webserver -D  -l ${AIRFLOW_HOME}/log/webserver.log  &
+    airflow flower -D -l ${AIRFLOW_HOME}/log/flower.log &
+    airflow scheduler
+  else
+    airflow ${role} 
+  fi
+}
+
+function main(){
+  local cmd=$1
+  
+  if [ "${cmd}" = "airflow" ];
+  then
+    shift
+    echo "Running airflow $1..."
+    airflowup ${1:-master}
+  else
+    sudo -u root "$@"
+  fi
+}
+
+main $@

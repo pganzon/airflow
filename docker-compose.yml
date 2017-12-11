@@ -1,0 +1,45 @@
+version: '3'
+services:
+  airflow-worker:
+    image: "paulganzon/airflow"
+    depends_on:
+      - airflow-master
+      - postgres
+      - rabbitq
+    environment:
+      - AIRFLOW_CFG=/airflow.cfg
+    command: ["airflow", "worker"]
+    volumes:
+      - "./conf/airflow.cfg:/airflow.cfg"
+
+  airflow-master:
+    image: "paulganzon/airflow"
+    container_name: airflow-master
+    depends_on:
+      - postgres
+      - rabbitq
+    environment:
+      - AIRFLOW_CFG=/airflow.cfg
+    volumes:
+      - "./conf/airflow.cfg:/airflow.cfg"
+    ports:
+      - "8080:8080"
+      - "8793:8793"
+      - "5555:5555"
+
+  rabbitq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitq
+    ports:
+      - "15672:15672"
+
+  postgres:
+    image: "postgres"
+    container_name: postgres
+    environment:
+      - POSTGRES_PASSWORD=airflow123
+      - POSTGRES_USER=airflow
+      - POSTGRES_DB=airflow
+    ports:
+      - "5432:5432"
+
